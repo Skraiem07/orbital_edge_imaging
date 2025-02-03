@@ -12,6 +12,7 @@ app.use(express.json());
 // Routes
 app.use('/api', router);
 
+export default app;
 // Database connection with retries
 const connectWithRetry = async (retries = 5, interval = 5000) => {
   try {

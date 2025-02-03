@@ -34,9 +34,25 @@ export class OrderController {
 
   async getAllOrders(req: Request, res: Response): Promise<void> {
     try {
-      const orders = await AppDataSource.getRepository('Order').find({
-        relations: ['satelliteImage']
-      });
+      const orderRepo = AppDataSource.getRepository('Order');
+      const { email, startDate, endDate, imageId } = req.query;
+      
+      let query = orderRepo.createQueryBuilder('order').leftJoinAndSelect('order.satelliteImage', 'satelliteImage');
+      
+      if (email) {
+        query = query.andWhere('order.customerEmail = :email', { email });
+      }
+      if (startDate) {
+        query = query.andWhere('order.orderDate >= :startDate', { startDate });
+      }
+      if (endDate) {
+        query = query.andWhere('order.orderDate <= :endDate', { endDate });
+      }
+      if (imageId) {
+        query = query.andWhere('satelliteImage.catalogID = :imageId', { imageId });
+      }
+      
+      const orders = await query.getMany();
       res.json(orders);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching orders' });
