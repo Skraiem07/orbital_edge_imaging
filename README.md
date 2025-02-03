@@ -64,46 +64,162 @@ With the Docker containers running, the application should be live.
 
 You can test the endpoints using tools like Postman or `curl`.
 
-**Available Endpoints:**
 
-- **GET** `/api/satellite-images`: Retrieve all satellite images.
-- **GET** `/api/satellite-images/:id`: Retrieve a specific satellite image by ID.
-- **GET** `/api/orders`: Retrieve all orders.
-- **POST** `/api/orders`: Create a new order.
+**API Endpoints Documentation**
 
-**Example Request:**
+Below is a list of available API endpoints for managing satellite images and orders:
 
-To create a new order, send a POST request to `/api/orders` with the following JSON body:
+1. **Get All Satellite Images**
 
-```json
-{
-  "customerName": "John Doe",
-  "orderDate": "2025-02-03T16:49:23Z",
-  "satelliteImage": 1
-}
-```
+   - **Endpoint:** `GET /api/satellite-images`
+   - **Description:** Retrieves a list of all satellite images, with optional filters and pagination.
+   - **Query Parameters:**
+     - `acquisitionDateStart` (optional): Start date for image acquisition.
+     - `acquisitionDateEnd` (optional): End date for image acquisition.
+     - `sensor` (optional): Sensor type used for image capture.
+     - `minResolution` (optional): Minimum resolution of the images.
+     - `maxResolution` (optional): Maximum resolution of the images.
+     - `maxCloudCoverage` (optional): Maximum allowable cloud coverage percentage.
+     - `areaOfInterest` (optional): GeoJSON Polygon representing the area of interest.
+     - `page` (optional): Page number for pagination (default is 1).
+     - `limit` (optional): Number of items per page (default is 10).
+   - **Responses:**
+     - `200 OK`: Returns a list of satellite images with pagination metadata.
+     - `400 Bad Request`: Invalid query parameters.
+     - `500 Internal Server Error`: Error fetching images.
+   - **Example Request:**
+     ```bash
+     curl -X GET "http://localhost:3000/api/satellite-images?acquisitionDateStart=2025-01-01&acquisitionDateEnd=2025-02-01&sensor=MODIS&page=1&limit=10"
+     ```
+   - **Example Response:**
+     ```json
+     {
+       "images": [
+         {
+           "catalogID": "12345",
+           "acquisitionDateStart": "2025-01-15T10:00:00Z",
+           "acquisitionDateEnd": "2025-01-15T12:00:00Z",
+           "sensor": "MODIS",
+           "resolution": 250,
+           "cloudCoverage": 10,
+           "geometry": { ... }
+         },
+         ...
+       ],
+       "pagination": {
+         "totalItems": 100,
+         "totalPages": 10,
+         "currentPage": 1,
+         "itemsPerPage": 10
+       }
+     }
+     ```
 
-Ensure that the `satelliteImage` ID corresponds to an existing satellite image in your database.
+2. **Create a New Satellite Image**
 
-## Additional Information
+   - **Endpoint:** `POST /api/satellite-images`
+   - **Description:** Creates a new satellite image record.
+   - **Request Body:**
+     ```json
+     {
+       "catalogID": "12345",
+       "acquisitionDateStart": "2025-01-15T10:00:00Z",
+       "acquisitionDateEnd": "2025-01-15T12:00:00Z",
+       "sensor": "MODIS",
+       "resolution": 250,
+       "cloudCoverage": 10,
+       "geometry": { ... }
+     }
+     ```
+   - **Responses:**
+     - `201 Created`: Image successfully created.
+     - `400 Bad Request`: Invalid request body.
+     - `500 Internal Server Error`: Error creating image.
+   - **Example Request:**
+     ```bash
+     curl -X POST "http://localhost:3000/api/satellite-images" -H "Content-Type: application/json" -d '{"catalogID":"12345","acquisitionDateStart":"2025-01-15T10:00:00Z","acquisitionDateEnd":"2025-01-15T12:00:00Z","sensor":"MODIS","resolution":250,"cloudCoverage":10,"geometry":{...}}'
+     ```
+   - **Example Response:**
+     ```json
+     {
+       "catalogID": "12345",
+       "acquisitionDateStart": "2025-01-15T10:00:00Z",
+       "acquisitionDateEnd": "2025-01-15T12:00:00Z",
+       "sensor": "MODIS",
+       "resolution": 250,
+       "cloudCoverage": 10,
+       "geometry": { ... }
+     }
+     ```
 
-- **TypeORM Configuration**: The `ormconfig.json` file contains the configuration for TypeORM and PostgreSQL.
-- **Docker Compose**: The `docker-compose.yml` file defines the PostgreSQL service and the application container.
+3. **Get Satellite Image by ID**
 
-For more detailed information on setting up a Node.js, TypeScript, PostgreSQL, and Docker environment, you can refer to this tutorial: ([dev.to](https://dev.to/chandrapantachhetri/docker-postgres-node-typescript-setup-47db?utm_source=chatgpt.com))
+   - **Endpoint:** `GET /api/satellite-images/{id}`
+   - **Description:** Retrieves a specific satellite image by its catalog ID.
+   - **Parameters:**
+     - `id` (required): The catalog ID of the satellite image.
+   - **Responses:**
+     - `200 OK`: Returns the satellite image details.
+     - `404 Not Found`: Image not found.
+     - `500 Internal Server Error`: Error fetching image.
+   - **Example Request:**
+     ```bash
+     curl -X GET "http://localhost:3000/api/satellite-images/12345"
+     ```
+   - **Example Response:**
+     ```json
+     {
+       "catalogID": "12345",
+       "acquisitionDateStart": "2025-01-15T10:00:00Z",
+       "acquisitionDateEnd": "2025-01-15T12:00:00Z",
+       "sensor": "MODIS",
+       "resolution": 250,
+       "cloudCoverage": 10,
+       "geometry": { ... }
+     }
+     ```
 
-## License
+4. **Get All Orders**
 
-This project is licensed under the MIT License.
+   - **Endpoint:** `GET /api/orders`
+   - **Description:** Retrieves a list of all orders.
+   - **Responses:**
+     - `200 OK`: Returns a list of orders.
+     - `500 Internal Server Error`: Error fetching orders.
+   - **Example Request:**
+     ```bash
+     curl -X GET "http://localhost:3000/api/orders"
+     ```
+   - **Example Response:**
+     ```json
+     [
+       {
+        "id": 1,
+        "customerEmail": "test@example.com",
+        "orderDate": "2025-02-03T16:54:58.552Z",
+         "satelliteImage": { ... }
+       },
+       ...
+     ]
+     ```
 
-Feel free to modify and distribute the code as per your requirements.
+5. **Create a New Order**
 
-## Acknowledgments
-
-This project was inspired by various tutorials on setting up Node.js applications with TypeScript and PostgreSQL.
-
-Special thanks to the contributors of the [Docker, Postgres, Node, Typescript Setup](https://dev.to/chandrapantachhetri/docker-postgres-node-typescript-setup-47db) tutorial for their valuable insights.
-
-For a visual walkthrough of setting up a Node.js, TypeScript, PostgreSQL application with Docker, you might find this video helpful:
-
-[Ultimate Typescript/Node/Docker Setup: Step-by-Step (2023)](https://www.youtube.com/watch?v=yuTrHeDYY3E&utm_source=chatgpt.com) 
+   - **Endpoint:** `POST /api/orders`
+   - **Description:** Creates a new order.
+   - **Request Body:**
+     ```json
+     {
+       "email": "test@example.com",
+       "imageId": "SAT985784"
+     }
+     ```
+   - **Responses:**
+     - `201 Created`: Order successfully created.
+     - `400 Bad Request`: Invalid request body.
+     - `500 Internal Server Error`: Error creating order.
+   - **Example Request:**
+     ```bash
+     curl -X POST "http://localhost:3000/api/orders" -H "Content-Type: application/json" -d '{"email":"test@example.com","imageId":SAT985784}'
+     ```
+    Ensure that the satelliteImage ID corresponds to an existing satellite image in your database.

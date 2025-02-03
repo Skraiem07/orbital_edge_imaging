@@ -3,6 +3,7 @@ import express from 'express';
 import { AppDataSource } from './config/data-source';
 import router from './routes';
 
+
 const app = express();
 const PORT = 3000;
 
