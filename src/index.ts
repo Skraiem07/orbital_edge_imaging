@@ -1,35 +1,31 @@
-import "reflect-metadata";
+import 'reflect-metadata';
 import express from 'express';
-import { DataSource } from 'typeorm';
-import routes from './routes/routes';
-import AppDataSource from './ormconfig'; // Fixed import
+import { AppDataSource } from './config/data-source';
+import router from './routes';
 
 const app = express();
-const port = 3000;
+const PORT = 3000;
 
+// Middleware
 app.use(express.json());
-app.use('/api', routes);
 
-const MAX_RETRIES = 10;
-let retries = 0;
+// Routes
+app.use('/api', router);
 
-const connectWithRetry = async () => {
+// Database connection with retries
+const connectWithRetry = async (retries = 5, interval = 5000) => {
   try {
-    if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
-      console.log('Database connected successfully!');
-    }
-
-    app.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`);
+    await AppDataSource.initialize();
+    console.log('Database connected!');
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    if (retries < MAX_RETRIES) {
-      retries++;
-      console.log(`Connection attempt ${retries}/${MAX_RETRIES}`);
-      setTimeout(connectWithRetry, 10000);
+    if (retries > 0) {
+      console.log(`Connection failed, retrying in ${interval/1000}s... (${retries} left)`);
+      setTimeout(() => connectWithRetry(retries - 1, interval), interval);
     } else {
-      console.error('Final connection failure:', error);
+      console.error('Failed to connect to database:', error);
       process.exit(1);
     }
   }

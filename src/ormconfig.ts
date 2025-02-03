@@ -1,6 +1,6 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { SatelliteImage } from './entity/SatelliteImage';
-import { Order } from './entity/Order';
+import { SatelliteImage } from './entity/satellite-image.entity';
+import { Order } from './entity/order.entity';
 
 const ormconfig: DataSourceOptions = {
   type: "postgres",
@@ -8,7 +8,7 @@ const ormconfig: DataSourceOptions = {
   port: parseInt(process.env.DB_PORT || "5432"),
   username: process.env.POSTGRES_USER || "postgres",
   password: process.env.POSTGRES_PASSWORD || "1234",
-  database: process.env.POSTGRES_DB || "orbital_edge_imaging",
+  database: process.env.POSTGRES_DB || "orbital_imaging",
   synchronize: true,
   logging: false,
   entities: [SatelliteImage, Order],
