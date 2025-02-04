@@ -1,17 +1,17 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../config/data-source';
-import { SatelliteImage } from '../entity/satellite-image.entity'; 
+
+import { SatelliteImage } from '../models/satellite-image.model'; 
 import { Between, LessThanOrEqual, MoreThanOrEqual, Raw } from 'typeorm';
+import { AppDataSource } from '../config/data-source';
 
-class SatelliteImageController {
 
+export class SatelliteImageController {
 
   static getAllImages = async (req: Request, res: Response) => {
     const imageRepo = AppDataSource.getRepository(SatelliteImage);
     try {
       console.log('Fetching all satellite images with filters and pagination...', req.query);
   
-      // Existing filters
       const { 
         acquisitionDateStart, 
         acquisitionDateEnd, 
@@ -19,27 +19,27 @@ class SatelliteImageController {
         minResolution, 
         maxResolution, 
         maxCloudCoverage,
-        areaOfInterest  // New GeoJSON filter
+        areaOfInterest  
       } = req.query;
   
-      // Pagination parameters
+      
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const skip = (page - 1) * limit;
   
       const filters: any = {};
   
-      // New GeoJSON filter logic
+      
       if (areaOfInterest) {
         try {
           const aoi = JSON.parse(areaOfInterest as string);
           
-          // Basic GeoJSON validation
+          
           if (aoi.type !== 'Polygon' || !Array.isArray(aoi.coordinates)) {
             return res.status(400).json({ message: 'Invalid GeoJSON Polygon in areaOfInterest parameter' });
           }
           
-          // Add spatial filter using PostGIS ST_Intersects
+         
           filters.geometry = Raw(() => 
             `ST_Intersects(geometry, ST_GeomFromGeoJSON(:geojson))`, 
             { geojson: JSON.stringify(aoi) }
@@ -49,7 +49,7 @@ class SatelliteImageController {
         }
       }
   
-      // Existing filter logic
+      
       if (acquisitionDateStart && acquisitionDateEnd) {
         filters.acquisitionDateStart = Between(
           new Date(acquisitionDateStart as string), 
@@ -79,8 +79,7 @@ class SatelliteImageController {
       if (maxCloudCoverage) {
         filters.cloudCoverage = LessThanOrEqual(parseFloat(maxCloudCoverage as string));
       }
-  
-      // Get total count and paginated results
+
       const totalItems = await imageRepo.count({ where: filters });
       const images = await imageRepo.find({
         where: filters,
@@ -106,7 +105,7 @@ class SatelliteImageController {
       res.status(500).json({ message: 'Error fetching images' });
     }
   }
-  
+
   static createImage = async (req: Request, res: Response) => {
     const imageRepo = AppDataSource.getRepository(SatelliteImage);
     try {

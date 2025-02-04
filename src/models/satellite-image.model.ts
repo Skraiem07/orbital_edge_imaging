@@ -1,8 +1,8 @@
 import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { Geometry } from 'geojson';
-import { Order } from './order.entity';
+import { Order } from './order.model';
 
-@Entity({ name: 'satellite_image' }) // Match table name
+@Entity({ name: 'satellite_image' }) 
 export class SatelliteImage {
   @PrimaryColumn({ name: 'catalog_id' })
   catalogID!: string;
@@ -44,4 +44,3 @@ export class SatelliteImage {
 )
 orders!: Order[];
 }
-export default SatelliteImage;

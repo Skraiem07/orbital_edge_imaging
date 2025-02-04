@@ -1,20 +1,19 @@
 import 'reflect-metadata';
 import express from 'express';
-import { AppDataSource } from './config/data-source';
 import router from './routes';
+import { AppDataSource } from './config/data-source';
+import { errorHandler } from './middleware/error.middleware';
 
 
 const app = express();
 const PORT = 3000;
 
-// Middleware
 app.use(express.json());
-
-// Routes
+app.use(errorHandler);
 app.use('/api', router);
 
 export default app;
-// Database connection with retries
+
 const connectWithRetry = async (retries = 5, interval = 5000) => {
   try {
     await AppDataSource.initialize();
