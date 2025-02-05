@@ -8,13 +8,14 @@ export  class Order {
   id!: number;
 
   @Column()
-  @IsEmail()
-  @IsNotEmpty()
+  @IsEmail({}, { message: 'Invalid email format' })
+  @IsNotEmpty({ message: 'Email is required' })
   customerEmail!: string;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   orderDate!: Date;
 
-  @ManyToOne(() => SatelliteImage, (image) => image.orders)
+  @ManyToOne(() => SatelliteImage) 
   satelliteImage!: SatelliteImage;
 }
+

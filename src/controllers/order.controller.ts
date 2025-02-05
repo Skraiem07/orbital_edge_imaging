@@ -5,14 +5,14 @@ class OrderController {
   
   async createOrder(req: Request, res: Response): Promise<void> {
     try {
-      const { email, imageId } = req.body;
+      const { customerEmail, imageId } = req.body;
 
-      if (!email || !imageId) {
+      if (!customerEmail || !imageId) {
         res.status(400).json({ message: 'Email and imageId are required' });
         return;
       }
 
-      const order = await OrderService.createOrder(email, imageId);
+      const order = await OrderService.createOrder(customerEmail, imageId);
       res.status(201).json(order);
     } catch (error) {
       if (error instanceof Error) {

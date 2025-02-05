@@ -6,7 +6,7 @@ class OrderService {
   private orderRepository = AppDataSource.getRepository(Order);
   private imageRepository = AppDataSource.getRepository(SatelliteImage);
 
-  async createOrder(email: string, imageId: string) {
+  async createOrder(customerEmail: string, imageId: string) {
     const image = await this.imageRepository.findOne({
       where: { catalogID: imageId },
     });
@@ -16,7 +16,7 @@ class OrderService {
     }
 
     const order = this.orderRepository.create({
-      customerEmail: email,
+      customerEmail: customerEmail,
       satelliteImage: image,
     });
 

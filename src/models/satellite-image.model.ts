@@ -2,8 +2,9 @@ import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { Geometry } from 'geojson';
 import { Order } from './order.model';
 
-@Entity({ name: 'satellite_image' }) 
+@Entity({ name: 'satellite_image' })
 export class SatelliteImage {
+  
   @PrimaryColumn({ name: 'catalog_id' })
   catalogID!: string;
 
@@ -37,10 +38,4 @@ export class SatelliteImage {
   @Column('geometry', { spatialFeatureType: 'Polygon', srid: 4326 })
   geometry!: Geometry;
 
-  @OneToMany(
-    () => Order, 
-    order => order.satelliteImage,
-    { cascade: true }
-)
-orders!: Order[];
 }

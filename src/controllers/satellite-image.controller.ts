@@ -1,58 +1,47 @@
+// src/controllers/satellite-image.controller.ts
 import { Request, Response } from 'express';
-
-import { SatelliteImage } from '../models/satellite-image.model'; 
+import SatelliteImageService from '../services/satellite-image.service';
 import { Between, LessThanOrEqual, MoreThanOrEqual, Raw } from 'typeorm';
-import { AppDataSource } from '../config/data-source';
 
-
-export class SatelliteImageController {
-
-  static getAllImages = async (req: Request, res: Response) => {
-    const imageRepo = AppDataSource.getRepository(SatelliteImage);
+class SatelliteImageController {
+  async getAllImages(req: Request, res: Response): Promise<void> {
     try {
-      console.log('Fetching all satellite images with filters and pagination...', req.query);
-  
-      const { 
-        acquisitionDateStart, 
-        acquisitionDateEnd, 
-        sensor, 
-        minResolution, 
-        maxResolution, 
+      const {
+        acquisitionDateStart,
+        acquisitionDateEnd,
+        sensor,
+        minResolution,
+        maxResolution,
         maxCloudCoverage,
-        areaOfInterest  
+        areaOfInterest,
+        page = 1,
+        limit = 10,
       } = req.query;
-  
-      
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const skip = (page - 1) * limit;
-  
+
       const filters: any = {};
-  
-      
+
+      // Area of Interest (GeoJSON Polygon)
       if (areaOfInterest) {
         try {
           const aoi = JSON.parse(areaOfInterest as string);
-          
-          
           if (aoi.type !== 'Polygon' || !Array.isArray(aoi.coordinates)) {
-            return res.status(400).json({ message: 'Invalid GeoJSON Polygon in areaOfInterest parameter' });
+            res.status(400).json({ message: 'Invalid GeoJSON Polygon in areaOfInterest parameter' });
+            return;
           }
-          
-         
-          filters.geometry = Raw(() => 
-            `ST_Intersects(geometry, ST_GeomFromGeoJSON(:geojson))`, 
+          filters.geometry = Raw(
+            () => `ST_Intersects(geometry, ST_GeomFromGeoJSON(:geojson))`,
             { geojson: JSON.stringify(aoi) }
           );
         } catch (error) {
-          return res.status(400).json({ message: 'Invalid GeoJSON in areaOfInterest parameter' });
+          res.status(400).json({ message: 'Invalid GeoJSON in areaOfInterest parameter' });
+          return;
         }
       }
-  
-      
+
+      // Date Range
       if (acquisitionDateStart && acquisitionDateEnd) {
         filters.acquisitionDateStart = Between(
-          new Date(acquisitionDateStart as string), 
+          new Date(acquisitionDateStart as string),
           new Date(acquisitionDateEnd as string)
         );
       } else if (acquisitionDateStart) {
@@ -60,14 +49,16 @@ export class SatelliteImageController {
       } else if (acquisitionDateEnd) {
         filters.acquisitionDateStart = LessThanOrEqual(new Date(acquisitionDateEnd as string));
       }
-  
+
+      // Sensor
       if (sensor) {
         filters.sensor = sensor;
       }
-  
+
+      // Resolution Range
       if (minResolution && maxResolution) {
         filters.resolution = Between(
-          parseFloat(minResolution as string), 
+          parseFloat(minResolution as string),
           parseFloat(maxResolution as string)
         );
       } else if (minResolution) {
@@ -75,30 +66,27 @@ export class SatelliteImageController {
       } else if (maxResolution) {
         filters.resolution = LessThanOrEqual(parseFloat(maxResolution as string));
       }
-  
+
+      // Cloud Coverage
       if (maxCloudCoverage) {
         filters.cloudCoverage = LessThanOrEqual(parseFloat(maxCloudCoverage as string));
       }
 
-      const totalItems = await imageRepo.count({ where: filters });
-      const images = await imageRepo.find({
-        where: filters,
-        take: limit,
-        skip: skip,
-      });
-  
-      const totalPages = Math.ceil(totalItems / limit);
-  
-      console.log(`Found ${totalItems} images. Showing page ${page} of ${totalPages}`);
-      
+      // Fetch images with pagination
+      const { images, totalItems, totalPages } = await SatelliteImageService.getAllImages(
+        filters,
+        parseInt(page as string),
+        parseInt(limit as string)
+      );
+
       res.json({
         images,
         pagination: {
           totalItems,
           totalPages,
-          currentPage: page,
-          itemsPerPage: limit,
-        }
+          currentPage: parseInt(page as string),
+          itemsPerPage: parseInt(limit as string),
+        },
       });
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -106,12 +94,9 @@ export class SatelliteImageController {
     }
   }
 
-  static createImage = async (req: Request, res: Response) => {
-    const imageRepo = AppDataSource.getRepository(SatelliteImage);
+  async createImage(req: Request, res: Response): Promise<void> {
     try {
-      console.log('Creating image:', req.body);
-      const image = imageRepo.create(req.body);
-      await imageRepo.save(image);
+      const image = await SatelliteImageService.createImage(req.body);
       res.status(201).json(image);
     } catch (error) {
       console.error('Error creating image:', error);
@@ -119,11 +104,14 @@ export class SatelliteImageController {
     }
   }
 
-  static getImageById = async (req: Request, res: Response) => {
-    const imageRepo = AppDataSource.getRepository(SatelliteImage);
+  async getImageById(req: Request, res: Response): Promise<void> {
     try {
-      const image = await imageRepo.findOne({ where: { catalogID: req.params.id } });
-      image ? res.json(image) : res.status(404).json({ message: 'Image not found' });
+      const image = await SatelliteImageService.getImageById(req.params.id);
+      if (image) {
+        res.json(image);
+      } else {
+        res.status(404).json({ message: 'Image not found' });
+      }
     } catch (error) {
       console.error('Error fetching image:', error);
       res.status(500).json({ message: 'Error fetching image' });
@@ -131,4 +119,4 @@ export class SatelliteImageController {
   }
 }
 
-export default SatelliteImageController;
+export default new SatelliteImageController();
